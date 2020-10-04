@@ -132,7 +132,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     wc.lpszClassName = className;
 
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-    ULONG_PTR           gdiplusToken;
+    ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
     RegisterClass(&wc);
