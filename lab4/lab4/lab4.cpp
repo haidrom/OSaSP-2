@@ -2,26 +2,106 @@
 //
 
 #include <iostream>
+#include <list>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <iterator>
 #include "ThreadPool.h"
 
-void task();
-void anotherTask();
+struct SortParams
+{
+    std::vector<std::string>* vector;
+    int left;
+    int right;
+};
+
+void sortStringList(LPVOID lpParam);
+void sortTwoVectors(LPVOID lpParam);
 
 int main()
 {
-    std::cout << "Hello World!\n";
-    ThreadPool threadPool = ThreadPool();
-    threadPool.AddTask(task);
-    threadPool.AddTask(anotherTask);
-   // Sleep(5000);
+    std::ifstream file("D:\\test.txt");
+    std::vector<std::string> fileLines;
+    std::string line;
+    if (file.is_open())
+    {
+        while (getline(file, line))
+        {
+            fileLines.push_back(line);
+        }
+    }
+    file.close();
+    copy(fileLines.begin(), fileLines.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+    std::cout << std::endl;
+    std::cout << std::endl;
+    int partsSize = 2;
+    while (partsSize <= fileLines.size())
+    {
+        std::vector<std::vector<std::string>> parts;
+        ThreadPool threadPool = ThreadPool();
+        int i = 0;
+        while (i < fileLines.size())
+        {
+            std::vector<std::string> buf(partsSize);
+            int j = 0;
+            while (j < partsSize)
+            {
+                buf[j++] = fileLines[i++];
+            }
+            parts.push_back(buf);
+        }
+        for (int i = 0; i < parts.size(); i++)
+        {
+            threadPool.AddTask(sortTwoVectors, &parts[i]);
+        }
+        threadPool.Wait();
+        for (int i = 0; i < parts.size(); i++)
+        {
+            copy((parts[i]).begin(), (parts[i]).end(), fileLines.begin() + i * partsSize);
+        }
+        parts.clear();
+        partsSize *= 2;
+
+    }
+
+    copy(fileLines.begin(), fileLines.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+    std::cout << std::endl;
+    std::cout << std::endl;
+  
 }
 
-void task()
+void sortStringList(LPVOID lpParam)
 {
     std::cout << "task" << std::endl;
+    std::list<std::string>* list = (std::list<std::string>*)lpParam;
+    list->sort();
 }
 
-void anotherTask()
+void sortTwoVectors(LPVOID lpParam)
 {
-    std::cout << "anothertask" << std::endl;
+    std::vector<std::string>* vec = (std::vector<std::string>*)lpParam;
+    int size = vec->size();
+    int mid = size / 2;
+    int i = 0, j = mid;
+    std::vector<std::string> buf;
+    while (i < mid && j < size)
+    {
+        vec->at(i) < vec->at(j) ? buf.push_back(vec->at(i++)) : buf.push_back(vec->at(j++));
+    }
+    if (i >= mid)
+    {
+        while (j < size)
+        {
+            buf.push_back(vec->at(j++));
+        }
+    }
+    else
+    {
+        while (i < mid)
+        {
+            buf.push_back(vec->at(i++));
+        }
+    }
+    *vec = buf;
 }

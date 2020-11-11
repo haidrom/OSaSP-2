@@ -34,13 +34,16 @@ DWORD WINAPI ThreadPool::ThreadLoop()
 	bool flag = false;
 	while (_isWorking)
 	{
-		void (*task)() = NULL;
+		void (*task)(LPVOID lpParam) = NULL;
+		LPVOID lpParam = NULL;
 		WaitForSingleObject(_mutex, INFINITE);
 		{
 			flag = _currentTasksCount == 0;
 			if (!flag)
 			{
 				task = _tasksQueue.front();
+				lpParam = _params.front();
+				_params.pop_front();
 				_tasksQueue.pop_front();
 				_workingThreadsCount++;
 				_currentTasksCount--;
@@ -50,7 +53,7 @@ DWORD WINAPI ThreadPool::ThreadLoop()
 		if (flag) (WaitForSingleObject(_emptyTasksQueueEvent, INFINITE));
 		else
 		{
-			task();
+			task(lpParam);
 			InterlockedDecrement(&_workingThreadsCount);
 		}
 	}
@@ -71,17 +74,31 @@ ThreadPool::~ThreadPool()
 }
 
 
-void ThreadPool::AddTask(void (*task)())
+void ThreadPool::AddTask(void (*task)(LPVOID lpParam), LPVOID lpParam)
 {
 	WaitForSingleObject(_mutex, INFINITE);
 	if (_isWorking)
 	{
 		_tasksQueue.push_back(task);
+		_params.push_back(lpParam);
 		_currentTasksCount++;
 		SetEvent(_emptyTasksQueueEvent);
 		ResetEvent(_emptyTasksQueueEvent);
 	}
 	ReleaseMutex(_mutex);
+}
+
+void ThreadPool::Wait()
+{
+	bool flag = false;
+	while (!flag)
+	{
+		WaitForSingleObject(_mutex, INFINITE);
+		{
+			flag = _tasksQueue.size() == 0 && _workingThreadsCount == 0;
+		}
+		ReleaseMutex(_mutex);
+	}
 }
 
 void ThreadPool::WaitAll()
@@ -96,7 +113,6 @@ void ThreadPool::WaitAll()
 			{
 				_isWorking = false;
 				SetEvent(_emptyTasksQueueEvent);
-				_tasksQueue;
 			}
 		}
 		ReleaseMutex(_mutex);
