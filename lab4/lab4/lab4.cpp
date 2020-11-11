@@ -9,14 +9,6 @@
 #include <iterator>
 #include "ThreadPool.h"
 
-struct SortParams
-{
-    std::vector<std::string>* vector;
-    int left;
-    int right;
-};
-
-void sortStringList(LPVOID lpParam);
 void sortTwoVectors(LPVOID lpParam);
 
 int main()
@@ -33,7 +25,6 @@ int main()
     }
     file.close();
     copy(fileLines.begin(), fileLines.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-    std::cout << std::endl;
     std::cout << std::endl;
     int partsSize = 2;
     while (partsSize <= fileLines.size())
@@ -62,20 +53,10 @@ int main()
         }
         parts.clear();
         partsSize *= 2;
-
     }
-
     copy(fileLines.begin(), fileLines.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
     std::cout << std::endl;
-    std::cout << std::endl;
   
-}
-
-void sortStringList(LPVOID lpParam)
-{
-    std::cout << "task" << std::endl;
-    std::list<std::string>* list = (std::list<std::string>*)lpParam;
-    list->sort();
 }
 
 void sortTwoVectors(LPVOID lpParam)
